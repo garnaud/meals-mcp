@@ -1,0 +1,24 @@
+[project]
+name = "meals-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    { name = "Guillaume Arnaud", email = "guillaume.arnaud@user.com" }
+]
+dependencies = [
+    "mcp>=1.26.0",
+    "notion-client>=2.7.0",
+    "pydantic>=2.12.5",
+]
+
+[project.scripts]
+meals-mcp = "meals_mcp.main:main"
+meals-mcp-server = "meals_mcp.server:run"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+]
