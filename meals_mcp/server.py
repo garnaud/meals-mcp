@@ -14,7 +14,7 @@ async def list_tools() -> list[Tool]:
     return [
         Tool(
             name="get_recent_meals",
-            description="Retrieves a list of meals from the Notion 'Repas' database. Can filter by date range (start_date, end_date) or just get the most recent ones.",
+            description="Retrieves a list of meals from the Notion 'Repas' database. Can filter by date range (start_date, end_date), search by name, or just get the most recent ones.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -30,6 +30,10 @@ async def list_tools() -> list[Tool]:
                     "end_date": {
                         "type": "string",
                         "description": "The end date for filtering meals (ISO 8601 format, e.g., '2023-10-31'). If provided, retrieves meals on or before this date."
+                    },
+                    "search_query": {
+                        "type": "string",
+                        "description": "A search term to filter meals by name (e.g., 'pasta')."
                     }
                 }
             }
@@ -43,16 +47,19 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         limit = arguments.get("limit", 30)
         start_date = arguments.get("start_date")
         end_date = arguments.get("end_date")
+        search_query = arguments.get("search_query")
         
         try:
             client = NotionClient()
             # Run the synchronous Notion client in a thread
-            meals = await asyncio.to_thread(client.get_meals, limit=limit, start_date=start_date, end_date=end_date)
+            meals = await asyncio.to_thread(client.get_meals, limit=limit, start_date=start_date, end_date=end_date, search_query=search_query)
             
             if not meals:
                 return [TextContent(type="text", text="No meals found within the specified criteria.")]
 
-            if start_date or end_date:
+            if search_query:
+                meal_list_str = f"Here are the meals matching '{search_query}':\n\n"
+            elif start_date or end_date:
                 meal_list_str = f"Here are the meals from {start_date or 'beginning'} to {end_date or 'now'}:\n\n"
             else:
                 meal_list_str = "Here are the most recent meals:\n\n"

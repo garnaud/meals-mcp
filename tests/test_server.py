@@ -9,6 +9,8 @@ async def test_list_tools():
     tools = await list_tools()
     assert len(tools) == 1
     assert tools[0].name == "get_recent_meals"
+    # Verify search_query is in schema
+    assert "search_query" in tools[0].inputSchema["properties"]
 
 @pytest.mark.asyncio
 async def test_call_tool():
@@ -39,7 +41,33 @@ async def test_call_tool():
         assert "Tags: Chicken, Rice (Recipe: http://recipe.com)" in text
         
         # Verify limit was passed correctly
-        mock_instance.get_meals.assert_called_with(limit=10)
+        mock_instance.get_meals.assert_called_with(limit=10, start_date=None, end_date=None, search_query=None)
+
+@pytest.mark.asyncio
+async def test_call_tool_search():
+    with patch("meals_mcp.server.NotionClient") as MockNotionClient:
+        mock_instance = MockNotionClient.return_value
+        mock_instance.get_meals.return_value = [
+            Meal(
+                name="Pasta",
+                date="2023-10-27",
+                tags=["Pasta", "Tomato"],
+                heure="soir",
+                recipe=None
+            )
+        ]
+
+        # Call the tool
+        result = await call_tool("get_recent_meals", {"search_query": "Pasta"})
+        
+        # Assertions
+        assert len(result) == 1
+        text = result[0].text
+        assert "Here are the meals matching 'Pasta':" in text
+        assert "**Pasta**" in text
+        
+        # Verify search_query was passed correctly
+        mock_instance.get_meals.assert_called_with(limit=30, start_date=None, end_date=None, search_query="Pasta")
 
 @pytest.mark.asyncio
 async def test_call_tool_empty():

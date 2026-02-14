@@ -6,9 +6,9 @@ from meals_mcp.models import Meal
 class NotionClient:
     def __init__(self, auth_token: str = None):
         if auth_token is None:
-            auth_token = os.environ.get("NOTION_TOKEN")
+            auth_token = os.environ.get("NOTION_TOKEN") or os.environ.get("NOTION_API_KEY")
         if not auth_token:
-            raise ValueError("Notion API token (NOTION_TOKEN) not found. Please set the environment variable or pass it to the constructor.")
+            raise ValueError("Notion API token (NOTION_TOKEN or NOTION_API_KEY) not found. Please set the environment variable or pass it to the constructor.")
         self._client = notion_client.Client(auth=auth_token)
 
     def get_users(self):
@@ -121,17 +121,17 @@ class NotionClient:
             print(f"Skipping malformed meal entry: {e}")
             return None
 
-    def get_meals(self, limit: int = 30, start_date: str = None, end_date: str = None) -> List[Meal]:
+    def get_meals(self, limit: int = 30, start_date: str = None, end_date: str = None, search_query: str = None) -> List[Meal]:
         """
         Retrieves a list of meals from the 'Repas' database.
-        Optionally filters by a date range.
+        Optionally filters by a date range or search query.
         """
         try:
             data_source_id = self._find_data_source_id()
 
             # Build Query
             query_params = {
-                "page_size": 100 if start_date or end_date else limit, # Fetch more if filtering
+                "page_size": 100 if start_date or end_date or search_query else limit, # Fetch more if filtering
                 "sorts": [
                     {
                         "property": "Date",
@@ -163,11 +163,13 @@ class NotionClient:
                     continue
                 if end_date and meal.date > end_date:
                     continue
+                if search_query and search_query.lower() not in meal.name.lower():
+                    continue
 
                 meals.append(meal)
             
             # Respect limit if we fetched more due to filtering
-            if (start_date or end_date) and len(meals) > limit:
+            if (start_date or end_date or search_query) and len(meals) > limit:
                  meals = meals[:limit]
 
             return meals
