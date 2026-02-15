@@ -64,10 +64,10 @@ async def list_tools() -> list[Tool]:
                         "type": "string",
                         "description": "New time ('Midi' or 'Soir')."
                     },
-                    "tags": {
+                    "ingredients": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "List of new tags."
+                        "description": "List of new ingredients."
                     },
                     "recipe": {
                         "type": "string",
@@ -103,11 +103,11 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 meal_list_str = "Here are the most recent meals:\n\n"
             
             for meal in meals:
-                tags_str = ", ".join(meal.tags) if meal.tags else "No tags"
+                ingredients_str = ", ".join(meal.ingredients) if meal.ingredients else "No ingredients"
                 recipe_link = f" (Recipe: {meal.recipe})" if meal.recipe else ""
                 # Include ID for reference
                 meal_list_str += f"- **{meal.name}** ({meal.date}, {meal.heure})\n"
-                meal_list_str += f"  Tags: {tags_str}{recipe_link}\n"
+                meal_list_str += f"  Ingredients: {ingredients_str}{recipe_link}\n"
                 meal_list_str += f"  ID: {meal.id}\n"
 
             return [TextContent(type="text", text=meal_list_str)]
@@ -122,7 +122,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         new_name = arguments.get("new_name")
         date = arguments.get("date")
         heure = arguments.get("heure")
-        tags = arguments.get("tags")
+        ingredients = arguments.get("ingredients")
         recipe = arguments.get("recipe")
         
         client = NotionClient()
@@ -133,7 +133,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 if new_name: updates["name"] = new_name
                 if date: updates["date"] = date
                 if heure: updates["heure"] = heure
-                if tags is not None: updates["tags"] = tags
+                if ingredients is not None: updates["ingredients"] = ingredients
                 if recipe: updates["recipe"] = recipe
                 
                 updated_meal = await asyncio.to_thread(client.update_meal, meal_id=meal_id, updates=updates)

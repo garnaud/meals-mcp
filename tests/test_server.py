@@ -7,10 +7,10 @@ from meals_mcp.models import Meal
 @pytest.mark.asyncio
 async def test_list_tools():
     tools = await list_tools()
-    assert len(tools) == 1
-    assert tools[0].name == "get_recent_meals"
-    # Verify search_query is in schema
-    assert "search_query" in tools[0].inputSchema["properties"]
+    assert len(tools) == 2
+    tool_names = [tool.name for tool in tools]
+    assert "get_recent_meals" in tool_names
+    assert "update_meal" in tool_names
 
 @pytest.mark.asyncio
 async def test_call_tool():
@@ -23,7 +23,7 @@ async def test_call_tool():
             Meal(
                 name="Test Meal",
                 date="2023-10-27",
-                tags=["Chicken", "Rice"],
+                ingredients=["Chicken", "Rice"],
                 heure="soir",
                 recipe="http://recipe.com"
             )
@@ -38,7 +38,7 @@ async def test_call_tool():
         
         text = result[0].text
         assert "**Test Meal** (2023-10-27, soir)" in text
-        assert "Tags: Chicken, Rice (Recipe: http://recipe.com)" in text
+        assert "Ingredients: Chicken, Rice (Recipe: http://recipe.com)" in text
         
         # Verify limit was passed correctly
         mock_instance.get_meals.assert_called_with(limit=10, start_date=None, end_date=None, search_query=None)
@@ -51,7 +51,7 @@ async def test_call_tool_search():
             Meal(
                 name="Pasta",
                 date="2023-10-27",
-                tags=["Pasta", "Tomato"],
+                ingredients=["Pasta", "Tomato"],
                 heure="soir",
                 recipe=None
             )

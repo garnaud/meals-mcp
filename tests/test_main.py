@@ -9,10 +9,12 @@ def test_main_no_token(capsys):
     """
     if "NOTION_TOKEN" in os.environ:
         del os.environ["NOTION_TOKEN"]
+    if "NOTION_API_KEY" in os.environ:
+        del os.environ["NOTION_API_KEY"]
 
     main()
     captured = capsys.readouterr()
-    assert "Error: Notion API token (NOTION_TOKEN) not found. Please set the environment variable or pass it to the constructor." in captured.out
+    assert "Error: Notion API token (NOTION_TOKEN or NOTION_API_KEY) not found. Please set the environment variable or pass it to the constructor." in captured.out
 
 @patch("meals_mcp.main.NotionClient")
 @patch("meals_mcp.utils.notion.notion_client.Client")

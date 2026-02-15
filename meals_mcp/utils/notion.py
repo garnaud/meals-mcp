@@ -89,9 +89,9 @@ class NotionClient:
             if not date:
                  return None
 
-            # Tags (Multi-select)
-            tags_prop = properties.get("Tags", {}).get("multi_select", [])
-            tags = [tag.get("name") for tag in tags_prop]
+            # Ingredients (Multi-select)
+            ingredients_prop = properties.get("Ingredients", {}).get("multi_select", [])
+            ingredients = [tag.get("name") for tag in ingredients_prop]
 
             # Heure (Select)
             heure_prop = properties.get("Heure", {}).get("select", {})
@@ -114,7 +114,7 @@ class NotionClient:
                 id=page.get("id"),
                 name=name,
                 date=date,
-                tags=tags,
+                ingredients=ingredients,
                 heure=heure,
                 recipe=recipe
             )
@@ -230,10 +230,10 @@ class NotionClient:
                 }
             }
 
-        # Tags (Multi-select)
-        if "tags" in updates and updates["tags"] is not None:
-            properties["Tags"] = {
-                "multi_select": [{"name": tag} for tag in updates["tags"]]
+        # Ingredients (Multi-select)
+        if "ingredients" in updates and updates["ingredients"] is not None:
+            properties["Ingredients"] = {
+                "multi_select": [{"name": ingredient} for ingredient in updates["ingredients"]]
             }
 
         # Recipe (URL) - Maps to 'Lien'
