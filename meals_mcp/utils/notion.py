@@ -111,6 +111,7 @@ class NotionClient:
                         recipe = first_file.get("file", {}).get("url")
 
             return Meal(
+                id=page.get("id"),
                 name=name,
                 date=date,
                 tags=tags,
@@ -176,4 +177,78 @@ class NotionClient:
 
         except Exception as e:
             print(f"Error fetching meals from Notion API: {e}")
+            raise
+
+    def update_meal(self, meal_id: str, updates: dict) -> Optional[Meal]:
+        """
+        Updates a meal in the 'Repas' database.
+        
+        Args:
+            meal_id: The ID of the meal page to update.
+            updates: A dictionary of fields to update. Supported keys:
+                     - name: str (Update the title)
+                     - date: str (ISO 8601 date string)
+                     - heure: str ("Midi" or "Soir")
+                     - tags: List[str] (List of tags)
+                     - recipe: str (URL for the recipe)
+        
+        Returns:
+            The updated Meal object, or None if the update failed.
+        """
+        properties = {}
+        
+        # Name (Title)
+        if "name" in updates and updates["name"]:
+            # We need to find the title property name, defaulting to "Name"
+            # Since we can't easily dynamically find it here without an extra call, 
+            # we'll assume "Name" or try to be smart if possible.
+            # However, for updates, providing the correct property name is crucial.
+            # Let's assume "Name" as per previous observations.
+            properties["Name"] = {
+                "title": [
+                    {
+                        "text": {
+                            "content": updates["name"]
+                        }
+                    }
+                ]
+            }
+
+        # Date
+        if "date" in updates and updates["date"]:
+            properties["Date"] = {
+                "date": {
+                    "start": updates["date"]
+                }
+            }
+
+        # Heure (Select)
+        if "heure" in updates and updates["heure"]:
+             properties["Heure"] = {
+                "select": {
+                    "name": updates["heure"]
+                }
+            }
+
+        # Tags (Multi-select)
+        if "tags" in updates and updates["tags"] is not None:
+            properties["Tags"] = {
+                "multi_select": [{"name": tag} for tag in updates["tags"]]
+            }
+
+        # Recipe (URL) - Maps to 'Lien'
+        if "recipe" in updates: # Allow clearing if None passed explicitly? For now just update if present.
+             if updates["recipe"]:
+                properties["Lien"] = {
+                    "url": updates["recipe"]
+                }
+
+        if not properties:
+            return None
+
+        try:
+            response = self._client.pages.update(page_id=meal_id, properties=properties)
+            return self._map_page_to_meal(response)
+        except Exception as e:
+            print(f"Error updating meal {meal_id}: {e}")
             raise

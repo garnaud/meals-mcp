@@ -37,6 +37,44 @@ async def list_tools() -> list[Tool]:
                     }
                 }
             }
+        ),
+        Tool(
+            name="update_meal",
+            description="Updates a meal in the database. Can search by name first to confirm ID, or update directly by ID.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "meal_id": {
+                        "type": "string",
+                        "description": "The Notion Page ID of the meal to update. Required for the actual update."
+                    },
+                    "name_search": {
+                        "type": "string",
+                        "description": "Name of the meal to search for if ID is unknown. Will return a list of matches with IDs."
+                    },
+                    "new_name": {
+                        "type": "string",
+                        "description": "New name for the meal."
+                    },
+                    "date": {
+                        "type": "string",
+                        "description": "New date for the meal (ISO 8601, YYYY-MM-DD)."
+                    },
+                    "heure": {
+                        "type": "string",
+                        "description": "New time ('Midi' or 'Soir')."
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of new tags."
+                    },
+                    "recipe": {
+                        "type": "string",
+                        "description": "New recipe URL."
+                    }
+                }
+            }
         )
     ]
 
@@ -67,13 +105,70 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             for meal in meals:
                 tags_str = ", ".join(meal.tags) if meal.tags else "No tags"
                 recipe_link = f" (Recipe: {meal.recipe})" if meal.recipe else ""
+                # Include ID for reference
                 meal_list_str += f"- **{meal.name}** ({meal.date}, {meal.heure})\n"
                 meal_list_str += f"  Tags: {tags_str}{recipe_link}\n"
+                meal_list_str += f"  ID: {meal.id}\n"
 
             return [TextContent(type="text", text=meal_list_str)]
         except Exception as e:
             return [TextContent(type="text", text=f"Error fetching meals: {str(e)}")]
-    
+
+    elif name == "update_meal":
+        meal_id = arguments.get("meal_id")
+        name_search = arguments.get("name_search")
+        
+        # Updates
+        new_name = arguments.get("new_name")
+        date = arguments.get("date")
+        heure = arguments.get("heure")
+        tags = arguments.get("tags")
+        recipe = arguments.get("recipe")
+        
+        client = NotionClient()
+
+        if meal_id:
+            try:
+                updates = {}
+                if new_name: updates["name"] = new_name
+                if date: updates["date"] = date
+                if heure: updates["heure"] = heure
+                if tags is not None: updates["tags"] = tags
+                if recipe: updates["recipe"] = recipe
+                
+                updated_meal = await asyncio.to_thread(client.update_meal, meal_id=meal_id, updates=updates)
+                
+                if updated_meal:
+                    return [TextContent(type="text", text=f"Successfully updated meal:\n- **{updated_meal.name}** ({updated_meal.date}, {updated_meal.heure})\n  ID: {updated_meal.id}")]
+                else:
+                    return [TextContent(type="text", text=f"Failed to update meal with ID {meal_id}.")]
+            except Exception as e:
+                return [TextContent(type="text", text=f"Error updating meal: {str(e)}")]
+
+        elif name_search:
+            try:
+                meals = await asyncio.to_thread(client.get_meals, search_query=name_search)
+                
+                if not meals:
+                    return [TextContent(type="text", text=f"No meal found with name '{name_search}'.")]
+                
+                if len(meals) == 1:
+                    meal = meals[0]
+                    return [TextContent(type="text", text=f"Found 1 meal matching '{name_search}':\n\n- **{meal.name}** ({meal.date}, {meal.heure})\n  ID: {meal.id}\n\nTo update this meal, please call `update_meal` again with `meal_id='{meal.id}'` and the desired changes.")]
+                
+                # Multiple matches
+                meal_list_str = f"Multiple meals found matching '{name_search}'. Please call `update_meal` with the specific `meal_id` from the list below:\n\n"
+                for i, meal in enumerate(meals, 1):
+                    meal_list_str += f"{i}. **{meal.name}** ({meal.date}, {meal.heure}) - ID: {meal.id}\n"
+                
+                return [TextContent(type="text", text=meal_list_str)]
+
+            except Exception as e:
+                return [TextContent(type="text", text=f"Error searching for meal: {str(e)}")]
+        
+        else:
+             return [TextContent(type="text", text="Please provide either `meal_id` (to update) or `name_search` (to find the meal first).")]
+
     raise ValueError(f"Tool not found: {name}")
 
 async def main():
