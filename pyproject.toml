@@ -8,6 +8,7 @@ authors = [
     { name = "Guillaume Arnaud", email = "guillaume.arnaud@user.com" }
 ]
 dependencies = [
+    "google-genai>=1.63.0",
     "mcp>=1.26.0",
     "notion-client>=2.7.0",
     "pydantic>=2.12.5",

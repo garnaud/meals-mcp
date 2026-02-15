@@ -50,6 +50,36 @@ To run the MCP server:
 meals-mcp-server
 ```
 
+## Meal Planning Agent System
+
+This project includes an advanced multi-agent system to plan your weekly meals based on your Notion history and specific family constraints.
+
+### How it works
+
+The system uses three specialized agents:
+*   **Planner:** Retrieves the last 3 months of meals from Notion and creates a draft plan respecting constraints (simple meals on Mon/Tue, light Saturday noon, etc.).
+*   **Dietical Coach:** Ensures the plan is balanced and healthy, providing feedback to the Planner if iterations are needed.
+*   **Cooker:** Once the plan is approved, this French Chef persona provides concise recipe cards, tips, and estimated durations for each meal.
+
+### Usage
+
+1.  **Set your Google API Key:**
+    The agents require access to Gemini. Export your API key:
+    ```bash
+    export GOOGLE_API_KEY="your_google_api_key"
+    ```
+
+2.  **Run the interactive script:**
+    ```bash
+    uv run python scripts/plan_week.py
+    ```
+
+3.  **Follow the prompts:**
+    - Enter the date range for the week.
+    - Review the proposed plan.
+    - Provide feedback (e.g., "Change Wednesday lunch to something without chicken") or confirm the plan.
+    - Receive your final shopping list (for 5 people) and Chef's recipe cards!
+
 ## Using MCP Locally with Gemini
 
 To use this MCP server locally with the Gemini desktop app, you need to add it to your Gemini configuration file.
